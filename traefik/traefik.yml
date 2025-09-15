@@ -1,0 +1,75 @@
+# traefik.yml
+api:
+  dashboard: true
+
+providers:
+  docker:
+    exposedByDefault: false
+  file:
+    directory: "/etc/traefik/custom"
+    watch: true
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        options: modern-tls
+      middlewares:
+        # - crowdsec-bouncer@file
+        - crowdsec-traefik@file
+
+serversTransport:
+  insecureSkipVerify: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: your-email@yourdomain.com
+      keyType: "RSA4096"
+      storage: /letsencrypt/acme.json
+      tlsChallenge: true
+  cloudflare:
+    acme:
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"  # TESTING ONLY
+      email: your-email@yourdomain.com
+      storage: /letsencrypt/acme.json  # Simpan di volume persisten
+      keyType: EC_P256               # Gunakan ECC untuk performa & keamanan
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+        delayBeforeCheck: 30
+
+tls:
+  options:
+    modern-tls:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+      sniStrict: true
+
+log:
+  level: debug  # for error level logging
+  filepath: "/logs/error.log"
+
+accesslog:
+  filepath: "/logs/access.log"
+
+experimental:
+  plugins:
+    bouncer:
+      moduleName: "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+      version: "v1.4.5"

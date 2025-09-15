@@ -1,0 +1,107 @@
+services:
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      GID: "${GID-1000}"
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/base-http-scenarios crowdsecurity/sshd crowdsecurity/linux crowdsecurity/appsec-generic-rules crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-crs"
+      BOUNCER_KEY_TRAEFIK: ${CROWDSEC_BOUNCER_API_KEY}
+    volumes:
+      - ./crowdsec-db:/var/lib/crowdsec/data/
+      - ./crowdsec-config:/etc/crowdsec/
+      - ./logs/traefik:/var/log/traefik
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - /var/log/syslog:/var/log/syslog:ro
+    networks:
+      - external
+    restart: unless-stopped
+  bouncer-traefik:
+    image: docker.io/fbonalair/traefik-crowdsec-bouncer:latest
+    container_name: bouncer-traefik
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
+      CROWDSEC_AGENT_HOST: crowdsec:8080
+    networks:
+      - external
+    depends_on:
+      - crowdsec
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    environment:
+      - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
+      - CF_DNS_API_TOKEN=${CLOUDFLARE_API_KEY}
+      - CROWDSEC_LAPI_KEY=${CROWDSEC_BOUNCER_API_KEY}
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./traefik/custom:/etc/traefik/custom
+      - ./logs/traefik:/logs
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - external
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      # Autentikasi untuk dashboard Traefik
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`${DOMAIN_TRAEFIK}`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=admin"
+      - "traefik.http.routers.traefik.tls.certresolver=${CERTRESOLVER}"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_PASSWORD}" # Ganti dengan user:password hash
+  app:
+    image: traefik/whoami
+    deploy:
+      mode: replicated
+      replicas: ${REPLICAS:-3}
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '${CPU_LIMIT:-0.5}'
+          memory: ${MEMORY_LIMIT:-512M}
+        reservations:
+          cpus: '${CPU_RESERVE:-0.25}'
+          memory: ${MEMORY_RESERVE:-256M}
+    restart: unless-stopped
+    networks:
+      - internal
+      - external
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${APP_NAME}.rule=Host(`${DOMAIN_TEST}`)"
+      - "traefik.http.routers.${APP_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${APP_NAME}.service=${APP_NAME}"
+      - "traefik.http.routers.${APP_NAME}.tls.certresolver=${CERTRESOLVER}"
+      - "traefik.http.services.${APP_NAME}.loadbalancer.server.port=80"
+      # Middleware keamanan tambahan
+      - "traefik.http.routers.${APP_NAME}.middlewares=security-headers@file,compress@file"
+      - "traefik.docker.network=${NETWORK}"
+
+networks:
+  internal:
+    name: ${APP_NAME}
+  external:
+    external: true
+    name: ${NETWORK}
