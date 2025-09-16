@@ -3,6 +3,7 @@ api:
   dashboard: true
 
 providers:
+  providersThrottleDuration: 2s
   docker:
     exposedByDefault: false
   file:
@@ -19,7 +20,9 @@ entryPoints:
           scheme: https
 
   websecure:
-    address: ":443"
+    http3:
+      advertisedPort: 443
+    address: ":443/udp"
     http:
       tls:
         options: modern-tls
@@ -27,22 +30,30 @@ entryPoints:
         # - crowdsec-bouncer@file
         - crowdsec-traefik@file
 
-serversTransport:
-  insecureSkipVerify: true
-
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: your-email@yourdomain.com
+      email: your-email@example.com
       keyType: "RSA4096"
       storage: /letsencrypt/acme.json
       tlsChallenge: true
   cloudflare:
     acme:
       # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"  # TESTING ONLY
-      email: your-email@yourdomain.com
+      email: your-email@example.com
       storage: /letsencrypt/acme.json  # Simpan di volume persisten
-      keyType: EC_P256               # Gunakan ECC untuk performa & keamanan
+      keyType: EC256
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+        delayBeforeCheck: 30
+  zerossl:
+    acme:
+      caServer: https://acme.zerossl.com/v2/DV90
+      email: your-email@example.com
+      storage: /letsencrypt/acme.json
       dnsChallenge:
         provider: cloudflare
         resolvers:
@@ -59,6 +70,9 @@ tls:
         - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
         - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
         - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+      curvePreferences:
+        - CurveP521
+        - CurveP384
       sniStrict: true
 
 log:
