@@ -3,3 +3,4 @@ crowdsec-config
 crowdsec-db
 letsencrypt
 .env
+redis/data
