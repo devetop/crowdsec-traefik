@@ -66,8 +66,8 @@ services:
     restart: unless-stopped
     command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
     volumes:
-      - ./redis/data:/data
-      - ./redis/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis-data:/data
+      - ./redis-config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     env_file:
       - .env
     user: "redis"
