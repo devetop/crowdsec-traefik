@@ -60,6 +60,19 @@ services:
       - "traefik.http.routers.traefik.tls.certresolver=${CERTRESOLVER}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_PASSWORD}" # Ganti dengan user:password hash
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ./redis/data:/data
+      - ./redis/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    env_file:
+      - .env
+    user: "redis"
+    networks:
+      - internal
   app:
     image: traefik/whoami
     deploy:
