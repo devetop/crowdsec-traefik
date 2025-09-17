@@ -22,7 +22,7 @@ entryPoints:
   websecure:
     http3:
       advertisedPort: 443
-    address: ":443/udp"
+    address: ":443"
     http:
       tls:
         options: modern-tls
