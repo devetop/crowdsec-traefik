@@ -15,18 +15,18 @@ services:
     networks:
       - external
     restart: unless-stopped
-  bouncer-traefik:
-    image: docker.io/fbonalair/traefik-crowdsec-bouncer:latest
-    container_name: bouncer-traefik
-    security_opt:
-      - no-new-privileges:true
-    environment:
-      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
-      CROWDSEC_AGENT_HOST: crowdsec:8080
-    networks:
-      - external
-    depends_on:
-      - crowdsec
+  # bouncer-traefik:
+  #   image: docker.io/fbonalair/traefik-crowdsec-bouncer:latest
+  #   container_name: bouncer-traefik
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   environment:
+  #     CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
+  #     CROWDSEC_AGENT_HOST: crowdsec:8080
+  #   networks:
+  #     - external
+  #   depends_on:
+  #     - crowdsec
   traefik:
     image: traefik:latest
     container_name: traefik
@@ -49,6 +49,8 @@ services:
     restart: unless-stopped
     networks:
       - external
+    depends_on:
+      - crowdsec
     security_opt:
       - no-new-privileges:true
     labels:
@@ -62,6 +64,8 @@ services:
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_PASSWORD}" # Ganti dengan user:password hash
   redis:
     image: redis:alpine
+    mem_limit: 512m
+    cpus: 1.5
     container_name: redis
     restart: unless-stopped
     command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
@@ -102,6 +106,9 @@ services:
     networks:
       - internal
       - external
+    depends_on:
+      - crowdsec
+      - traefik
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${APP_NAME}.rule=Host(`${DOMAIN_TEST}`)"
