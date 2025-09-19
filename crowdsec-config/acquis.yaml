@@ -4,6 +4,12 @@ filenames:
 labels:
   type: syslog
 ---
+source: journalctl
+journalctl_filter:
+ - "_SYSTEMD_UNIT=ssh.service"
+labels:
+  type: syslog
+---
 poll_without_inotify: false
 filenames:
   - /var/log/traefik/*.log
