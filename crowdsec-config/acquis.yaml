@@ -6,9 +6,10 @@ labels:
 ---
 source: journalctl
 journalctl_filter:
- - "_SYSTEMD_UNIT=ssh.service"
+  - "_SYSTEMD_UNIT=ssh.service"
 labels:
   type: syslog
+  service: ssh
 ---
 poll_without_inotify: false
 filenames:
