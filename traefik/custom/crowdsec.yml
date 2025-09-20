@@ -22,6 +22,7 @@ http:
           crowdsecLapiKey: "CROWDSEC_BOUNCER_API_KEY"
           crowdsecLapiHost: "crowdsec:8080"
           crowdsecLapiScheme: "http"
+          banHtmlFilePath: "/ban.html"
           redisCacheEnabled: true
           redisCacheHost: "redis:6379"
           redisCachePassword: secure_password

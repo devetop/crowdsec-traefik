@@ -4,14 +4,17 @@ services:
     container_name: crowdsec
     environment:
       GID: "${GID-1000}"
-      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/base-http-scenarios crowdsecurity/sshd crowdsecurity/linux crowdsecurity/appsec-generic-rules crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-crs"
+      CUSTOM_HOSTNAME: "crowdsec"
       BOUNCER_KEY_TRAEFIK: ${CROWDSEC_BOUNCER_API_KEY}
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/base-http-scenarios crowdsecurity/sshd crowdsecurity/linux crowdsecurity/appsec-generic-rules crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-crs"
     volumes:
       - ./crowdsec-db:/var/lib/crowdsec/data/
       - ./crowdsec-config:/etc/crowdsec/
-      - ./logs/traefik:/var/log/traefik
+      - ./logs/traefik:/var/log/traefik:ro
       - /var/log/auth.log:/var/log/auth.log:ro
       - /var/log/syslog:/var/log/syslog:ro
+    ports:
+      - 127.0.0.1:9876:8080 # port mapping for local firewall bouncers
     networks:
       - external
     restart: unless-stopped
@@ -46,6 +49,8 @@ services:
       - ./logs/traefik:/logs
       - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./html/ban.html:/ban.html:ro
+      - ./html/captcha.html:/captcha.html:ro
     restart: unless-stopped
     networks:
       - external
@@ -64,8 +69,8 @@ services:
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_PASSWORD}" # Ganti dengan user:password hash
   redis:
     image: redis:alpine
-    mem_limit: 512m
     cpus: 1.5
+    mem_limit: 512m
     container_name: redis
     restart: unless-stopped
     command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
