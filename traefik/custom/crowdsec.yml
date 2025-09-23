@@ -25,9 +25,16 @@ http:
           banHtmlFilePath: "/ban.html"
           redisCacheEnabled: true
           redisCacheHost: "redis:6379"
-          redisCachePassword: secure_password
+          # redisCachePassword: secure_password
           redisCacheDatabase: "5"
           redisCacheUnreachableBlock: true
+          captchaProvider: custom
+          captchaCustomJsURL: "https://DOMAIN_WK/fast.js"
+          CaptchaCustomValidateURL: "http://wicketkeeper:8080/v0/siteverify"
+          CaptchaCustomKey: "wicketkeeper"
+          CaptchaCustomResponse: "wicketkeeper_solution"
+          captchaGracePeriodSeconds: 20
+          captchaHTMLFilePath: "/captcha.html"
           forwardedHeadersTrustedIPs:
             - "10.0.0.0/8"
             - "172.16.0.0/12"

@@ -6,7 +6,7 @@ services:
       GID: "${GID-1000}"
       CUSTOM_HOSTNAME: "crowdsec"
       BOUNCER_KEY_TRAEFIK: ${CROWDSEC_BOUNCER_API_KEY}
-      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/base-http-scenarios crowdsecurity/sshd crowdsecurity/linux crowdsecurity/appsec-generic-rules crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-crs"
+      COLLECTIONS: ${CROWDSEC_COLLECTIONS}
     volumes:
       - ./crowdsec-db:/var/lib/crowdsec/data/
       - ./crowdsec-config:/etc/crowdsec/
@@ -17,19 +17,36 @@ services:
       - 127.0.0.1:9876:8080 # port mapping for local firewall bouncers
     networks:
       - external
+    labels:
+      - "traefik.enable=false"
     restart: unless-stopped
-  # bouncer-traefik:
-  #   image: docker.io/fbonalair/traefik-crowdsec-bouncer:latest
-  #   container_name: bouncer-traefik
-  #   security_opt:
-  #     - no-new-privileges:true
-  #   environment:
-  #     CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
-  #     CROWDSEC_AGENT_HOST: crowdsec:8080
-  #   networks:
-  #     - external
-  #   depends_on:
-  #     - crowdsec
+  wicketkeeper:
+    image: ghcr.io/a-ve/wicketkeeper:latest
+    container_name: wicketkeeper
+    environment:
+      - ROOT_URL=http://${DOMAIN_WK}
+      - LISTEN_PORT=8080
+      - REDIS_ADDR=redis:6379
+      - DIFFICULTY=4
+      - ALLOWED_ORIGINS=*
+      - PRIVATE_KEY_PATH=/data/wicketkeeper.key
+    volumes:
+      - ./captcha-data:/data
+    user: root
+    networks:
+      - external
+    depends_on:
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${APP_NAME}-wicketkeeper.rule=Host(`${DOMAIN_WK}`)"
+      - "traefik.http.routers.${APP_NAME}-wicketkeeper.entrypoints=websecure"
+      - "traefik.http.routers.${APP_NAME}-wicketkeeper.service=${APP_NAME}-wicketkeeper"
+      - "traefik.http.routers.${APP_NAME}-wicketkeeper.tls.certresolver=${CERTRESOLVER}"
+      - "traefik.http.services.${APP_NAME}-wicketkeeper.loadbalancer.server.port=8080"
+      # Middleware keamanan tambahan
+      - "traefik.http.routers.${APP_NAME}-wicketkeeper.middlewares=security-headers@file,compress@file"
+      - "traefik.docker.network=${NETWORK}"
   traefik:
     image: traefik:latest
     container_name: traefik
@@ -73,7 +90,7 @@ services:
     mem_limit: 512m
     container_name: redis
     restart: unless-stopped
-    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
+    command: redis-server /usr/local/etc/redis/redis.conf
     volumes:
       - ./redis-data:/data
       - ./redis-config/redis.conf:/usr/local/etc/redis/redis.conf:ro
@@ -124,6 +141,19 @@ services:
       # Middleware keamanan tambahan
       - "traefik.http.routers.${APP_NAME}.middlewares=security-headers@file,compress@file"
       - "traefik.docker.network=${NETWORK}"
+
+  # bouncer-traefik: # CrowdSec Traefik bouncer (optional, jika tidak menggunakan plugin Traefik)
+  #   image: docker.io/fbonalair/traefik-crowdsec-bouncer:latest
+  #   container_name: bouncer-traefik
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   environment:
+  #     CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
+  #     CROWDSEC_AGENT_HOST: crowdsec:8080
+  #   networks:
+  #     - external
+  #   depends_on:
+  #     - crowdsec
 
 networks:
   internal:
