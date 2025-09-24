@@ -4,3 +4,4 @@ crowdsec-db
 letsencrypt
 .env
 redis-data
+captcha-data
