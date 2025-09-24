@@ -29,8 +29,8 @@ http:
           redisCacheDatabase: "5"
           redisCacheUnreachableBlock: true
           captchaProvider: custom
-          captchaCustomJsURL: "https://DOMAIN_WK/fast.js"
-          CaptchaCustomValidateURL: "http://wicketkeeper:8080/v0/siteverify"
+          captchaCustomJsURL: "https://DOMAIN_WK:8443/fast.js"
+          CaptchaCustomValidateURL: "https://DOMAIN_WK:8443/v0/siteverify"
           CaptchaCustomKey: "wicketkeeper"
           CaptchaCustomResponse: "wicketkeeper_solution"
           captchaGracePeriodSeconds: 20

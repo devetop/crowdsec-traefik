@@ -21,10 +21,11 @@ services:
       - "traefik.enable=false"
     restart: unless-stopped
   wicketkeeper:
+    user: "${UID-1000}:${GID-1000}"
     image: ghcr.io/a-ve/wicketkeeper:latest
     container_name: wicketkeeper
     environment:
-      - ROOT_URL=http://${DOMAIN_WK}
+      - ROOT_URL=https://${DOMAIN_WK}:8443
       - LISTEN_PORT=8080
       - REDIS_ADDR=redis:6379
       - DIFFICULTY=4
@@ -32,7 +33,6 @@ services:
       - PRIVATE_KEY_PATH=/data/wicketkeeper.key
     volumes:
       - ./captcha-data:/data
-    user: root
     networks:
       - external
     depends_on:
@@ -40,7 +40,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${APP_NAME}-wicketkeeper.rule=Host(`${DOMAIN_WK}`)"
-      - "traefik.http.routers.${APP_NAME}-wicketkeeper.entrypoints=websecure"
+      - "traefik.http.routers.${APP_NAME}-wicketkeeper.entrypoints=captcha"
       - "traefik.http.routers.${APP_NAME}-wicketkeeper.service=${APP_NAME}-wicketkeeper"
       - "traefik.http.routers.${APP_NAME}-wicketkeeper.tls.certresolver=${CERTRESOLVER}"
       - "traefik.http.services.${APP_NAME}-wicketkeeper.loadbalancer.server.port=8080"
@@ -60,6 +60,7 @@ services:
       - "80:80"
       - "443:443/tcp"
       - "443:443/udp"
+      - "8443:8443/tcp"
     volumes:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml
       - ./traefik/custom:/etc/traefik/custom

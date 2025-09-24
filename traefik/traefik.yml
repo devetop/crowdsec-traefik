@@ -30,6 +30,12 @@ entryPoints:
         # - crowdsec-bouncer@file
         - crowdsec-traefik@file
 
+  captcha:
+    address: ":8443"
+    http:
+      tls:
+        options: modern-tls
+
 certificatesResolvers:
   letsencrypt:
     acme:
