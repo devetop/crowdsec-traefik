@@ -44,6 +44,7 @@ services:
       - "traefik.http.routers.${APP_NAME}-wicketkeeper.service=${APP_NAME}-wicketkeeper"
       - "traefik.http.routers.${APP_NAME}-wicketkeeper.tls.certresolver=${CERTRESOLVER}"
       - "traefik.http.services.${APP_NAME}-wicketkeeper.loadbalancer.server.port=8080"
+      - "traefik.http.services.${APP_NAME}-wicketkeeper.loadbalancer.passhostheader=true"
       # Middleware keamanan tambahan
       - "traefik.http.routers.${APP_NAME}-wicketkeeper.middlewares=security-headers@file,compress@file"
       - "traefik.docker.network=${NETWORK}"
@@ -139,6 +140,7 @@ services:
       - "traefik.http.routers.${APP_NAME}.service=${APP_NAME}"
       - "traefik.http.routers.${APP_NAME}.tls.certresolver=${CERTRESOLVER}"
       - "traefik.http.services.${APP_NAME}.loadbalancer.server.port=80"
+      - "traefik.http.services.${APP_NAME}.loadbalancer.passhostheader=true"
       # Middleware keamanan tambahan
       - "traefik.http.routers.${APP_NAME}.middlewares=security-headers@file,compress@file"
       - "traefik.docker.network=${NETWORK}"
