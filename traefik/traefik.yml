@@ -46,15 +46,18 @@ certificatesResolvers:
   cloudflare:
     acme:
       # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"  # TESTING ONLY
-      email: your-email@example.com
+      email: your-email@yourdomain.com
       storage: /letsencrypt/acme.json  # Simpan di volume persisten
-      keyType: EC256
+      keyType: EC_P256               # Gunakan ECC untuk performa & keamanan
       dnsChallenge:
         provider: cloudflare
+        propagation:
+          delayBeforeChecks: 60
+          disableChecks: true
+          requireAllRNS: true
         resolvers:
           - "1.1.1.1:53"
           - "8.8.8.8:53"
-        delayBeforeCheck: 30
   zerossl:
     acme:
       caServer: https://acme.zerossl.com/v2/DV90
@@ -62,10 +65,13 @@ certificatesResolvers:
       storage: /letsencrypt/acme.json
       dnsChallenge:
         provider: cloudflare
+        propagation:
+          delayBeforeChecks: 60
+          disableChecks: true
+          requireAllRNS: true
         resolvers:
           - "1.1.1.1:53"
           - "8.8.8.8:53"
-        delayBeforeCheck: 30
 
 tls:
   options:
