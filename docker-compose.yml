@@ -20,6 +20,12 @@ services:
     labels:
       - "traefik.enable=false"
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,environment"
   wicketkeeper:
     user: "${UID-1000}:${GID-1000}"
     image: ghcr.io/a-ve/wicketkeeper:latest
@@ -48,6 +54,12 @@ services:
       # Middleware keamanan tambahan
       - "traefik.http.routers.${APP_NAME}-wicketkeeper.middlewares=security-headers@file,compress@file"
       - "traefik.docker.network=${NETWORK}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,environment"
   traefik:
     image: traefik:latest
     container_name: traefik
@@ -86,6 +98,12 @@ services:
       - "traefik.http.routers.traefik.tls.certresolver=${CERTRESOLVER}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_PASSWORD}" # Ganti dengan user:password hash
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,environment"
   redis:
     image: redis:alpine
     cpus: 1.5
@@ -101,6 +119,12 @@ services:
     user: "redis"
     networks:
       - external
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,environment"
   app:
     image: traefik/whoami
     deploy:
@@ -144,6 +168,12 @@ services:
       # Middleware keamanan tambahan
       - "traefik.http.routers.${APP_NAME}.middlewares=security-headers@file,compress@file"
       - "traefik.docker.network=${NETWORK}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,environment"
 
   # bouncer-traefik: # CrowdSec Traefik bouncer (optional, jika tidak menggunakan plugin Traefik)
   #   image: docker.io/fbonalair/traefik-crowdsec-bouncer:latest
